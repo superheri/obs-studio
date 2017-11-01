@@ -1,5 +1,5 @@
-OBS Studio Backend Design Introduction
-======================================
+OBS Studio Backend Design
+=========================
 The OBS Studio backend is powered by the library libobs.  Libobs
 provides the main pipeline, the video/audio subsystems, and the general
 framework for all plugins.
@@ -12,7 +12,8 @@ for:
 
 - :ref:`plugins_sources` -- Sources are used to render video and/or
   audio on stream.  Things such as capturing displays/games/audio,
-  playing a video, showing an image, or playing audio.
+  playing a video, showing an image, or playing audio.  Sources can also
+  be used to implement audio and video filters.
 
 - :ref:`plugins_outputs` -- Outputs allow the ability to output the
   currently rendering audio/video.  Streaming and recording are two
@@ -21,7 +22,8 @@ for:
 
 - :ref:`plugins_encoders` -- Encoders are OBS-specific implementations
   of video/audio encoders, which are used with outputs that use
-  encoders.
+  encoders.  x264, NVENC, Quicksync are examples of encoder
+  implementations.
 
 - :ref:`plugins_services` -- Services are custom implementations of
   streaming services, which are used with outputs that stream.  For

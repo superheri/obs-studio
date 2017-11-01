@@ -30,10 +30,24 @@ These are some notable headers commonly used by plugins:
     - `libobs/obs-service.h`_ -- Used for implementing services in
       plugin modules
 
+    - `libobs/obs-data.h`_ -- Used for managing settings for libobs
+      objects
+
+    - `libobs/obs-properties.h`_ -- Used for generating properties for
+      libobs objects
+
     - `libobs/graphics/graphics.h`_ -- Used for graphics rendering
 
 Common Directory Structure and CMakeLists.txt
 ---------------------------------------------
+The common way source files are organized is to have one file for plugin
+initialization, and then specific files for each individual object
+you're implementing.  For example, if you were to create a plugin called
+'my-plugin', you'd have something like my-plugin.c where plugin
+initialization is done, my-source.c for the definition of a custom
+source, my-output.c for the definition of a custom output, etc.  (This
+is not a rule of course)
+
 This is an example of a common directory structure for a native plugin
 module::
 
@@ -66,20 +80,13 @@ these files::
 
   install_obs_plugin_with_data(my-plugin data)
 
-Creating Native Plugin Modules
-------------------------------
-The common way source files are organized is to have one file for plugin
-initialization, and then specific files for each individual object
-you're implementing.  For example, if you were to create a plugin called
-'my-plugin', you'd have something like my-plugin.c where plugin
-initialization is done, my-source.c for the definition of a custom
-source, my-output.c for the definition of a custom output, etc.
-
+Native Plugin Initialization
+----------------------------
 To create a native plugin module, you will need to include the
-`libobs/obs-module.h`_ header, use `OBS_DECLARE_MODULE()`_ macro, then
-create a definition of the function obs_module_load_.  In your
-obs_module_load_ function, you then register any of your custom sources,
-outputs, encoders, or services.
+`libobs/obs-module.h`_ header, use :ref:`OBS_DECLARE_MODULE` macro, then
+create a definition of the function :ref:`obs_module_load`.  In your
+:ref:`obs_module_load` function, you then register any of your custom
+sources, outputs, encoders, or services.
 
 The following is an example of my-plugin.c, which would register one
 object of each type:
@@ -115,11 +122,12 @@ Sources
 -------
 Sources are used to render video and/or audio on stream.  Things such as
 capturing displays/games/audio, playing a video, showing an image, or
-playing audio.  The `libobs/obs-source.h`_ is the dedicated header for
+playing audio.  Sources can also be used to implement audio and video
+filters.  The `libobs/obs-source.h`_ file is the dedicated header for
 implementing sources.
 
 For example, to implement a source object, you need to define an
-obs_source_info_ structure and fill it out with information and
+:ref:`obs_source_info` structure and fill it out with information and
 callbacks related to your source:
 
 .. code:: cpp
@@ -141,8 +149,8 @@ callbacks related to your source:
           .get_height   = my_source_height
   };
 
-Then, in my-plugin.c, you would call obs_register_source_ in
-obs_module_load_ to register the source with libobs.
+Then, in my-plugin.c, you would call :ref:`obs_register_source` in
+:ref:`obs_module_load` to register the source with libobs.
 
 .. code:: cpp
 
@@ -161,29 +169,370 @@ obs_module_load_ to register the source with libobs.
           return true;
   }
 
+Some simple examples of sources:
+
+- Synchronous video source: The `image source <https://github.com/jp9000/obs-studio/blob/master/plugins/image-source/image-source.c>`_
+- Asynchronous video source: The `random texture test source <https://github.com/jp9000/obs-studio/blob/master/test/test-input/test-random.c>`_
+- Audio source: The `since wave test source <https://github.com/jp9000/obs-studio/blob/master/test/test-input/test-sinewave.c>`_
+- Video filter: The `test video filter <https://github.com/jp9000/obs-studio/blob/master/test/test-input/test-filter.c>`_
+- Audio filter: The `gain audio filter <https://github.com/jp9000/obs-studio/blob/master/plugins/obs-filters/gain-filter.c>`_
+
 .. _plugins_outputs:
 
 Outputs
 -------
+Outputs allow the ability to output the currently rendering audio/video.
+Streaming and recording are two common examples of outputs, but not the
+only types of outputs.  Outputs can receive the raw data or receive
+encoded data.  The `libobs/obs-output.h`_ file is the dedicated header
+for implementing outputs.
+
+For example, to implement an output object, you need to define an
+:ref:`obs_output_info` structure and fill it out with information and
+callbacks related to your output:
+
+.. code:: cpp
+
+  /* my-output.c */
+
+  [...]
+
+  struct obs_output_info my_output {
+          .id                   = "my_output",
+          .flags                = OBS_OUTPUT_AV | OBS_OUTPUT_ENCODED,
+          .get_name             = my_output_name,
+          .create               = my_output_create,
+          .destroy              = my_output_destroy,
+          .start                = my_output_start,
+          .stop                 = my_output_stop,
+          .encoded_packet       = my_output_data,
+          .get_total_bytes      = my_output_total_bytes,
+          .encoded_video_codecs = "h264",
+          .encoded_audio_codecs = "aac"
+  };
+
+Then, in my-plugin.c, you would call :ref:`obs_register_output` in
+:ref:`obs_module_load` to register the output with libobs.
+
+.. code:: cpp
+
+  /* my-plugin.c */
+
+  [...]
+  
+  extern struct obs_output_info  my_output;  /* Defined in my-output.c  */
+
+  bool obs_module_load(void)
+  {
+          obs_register_output(&my_output);
+
+          [...]
+
+          return true;
+  }
+
+Some examples of outputs:
+
+- Encoded video/audio outputs:
+
+  - The `FLV output <https://github.com/jp9000/obs-studio/blob/master/plugins/obs-outputs/flv-output.c>`_
+  - The `FFmpeg muxer output <https://github.com/jp9000/obs-studio/blob/master/plugins/obs-ffmpeg/obs-ffmpeg-mux.c>`_
+  - The `RTMP stream output <https://github.com/jp9000/obs-studio/blob/master/plugins/obs-outputs/rtmp-stream.c>`_
+
+- Raw video/audio outputs:
+
+  - The `FFmpeg output <https://github.com/jp9000/obs-studio/blob/master/plugins/obs-ffmpeg/obs-ffmpeg-output.c>`_
 
 .. _plugins_encoders:
 
 Encoders
 --------
+Encoders are OBS-specific implementations of video/audio encoders, which
+are used with outputs that use encoders.  x264, NVENC, Quicksync are
+examples of encoder implementations.  The `libobs/obs-encoder.h`_ file
+is the dedicated header for implementing encoders.
+
+For example, to implement an encoder object, you need to define an
+:ref:`obs_encoder_info` structure and fill it out with information and
+callbacks related to your encoder:
+
+.. code:: cpp
+
+  /* my-encoder.c */
+
+  [...]
+
+  struct obs_encoder_info my_encoder_encoder = {
+          .id             = "my_encoder",
+          .type           = OBS_ENCODER_VIDEO,
+          .codec          = "h264",
+          .get_name       = my_encoder_name,
+          .create         = my_encoder_create,
+          .destroy        = my_encoder_destroy,
+          .encode         = my_encoder_encode,
+          .update         = my_encoder_update,
+          .get_extra_data = my_encoder_extra_data,
+          .get_sei_data   = my_encoder_sei,
+          .get_video_info = my_encoder_video_info
+  };
+
+Then, in my-plugin.c, you would call :ref:`obs_register_encoder` in
+:ref:`obs_module_load` to register the encoder with libobs.
+
+.. code:: cpp
+
+  /* my-plugin.c */
+
+  [...]
+  
+  extern struct obs_encoder_info my_encoder; /* Defined in my-encoder.c */
+
+  bool obs_module_load(void)
+  {
+          obs_register_encoder(&my_encoder);
+
+          [...]
+
+          return true;
+  }
+
+Examples of encoders:
+
+- Video encoders:
+
+  - The `x264 encoder <https://github.com/jp9000/obs-studio/tree/master/plugins/obs-x264>`_
+  - The `FFmpeg NVENC encoder <https://github.com/jp9000/obs-studio/blob/master/plugins/obs-ffmpeg/obs-ffmpeg-nvenc.c>`_
+  - The `Quicksync encoder <https://github.com/jp9000/obs-studio/tree/master/plugins/obs-qsv11>`_
+
+- Audio encoders:
+
+  - The `FFmpeg AAC/Opus encoder <https://github.com/jp9000/obs-studio/blob/master/plugins/obs-ffmpeg/obs-ffmpeg-audio-encoders.c>`_
 
 .. _plugins_services:
 
 Services
 --------
+Services are custom implementations of streaming services, which are
+used with outputs that stream.  For example, you could have a custom
+implementation for streaming to Twitch, and another for YouTube to allow
+the ability to log in and use their APIs to do things such as get the
+RTMP servers or control the channel.  The `libobs/obs-service.h`_ file
+is the dedicated header for implementing services.
 
-.. _obs_source_info: https://github.com/jp9000/obs-studio/blob/2c58185af3c85f4e594a4c067c9dfe5fa4b5b0a9/libobs/obs-source.h#L145-L431
-.. _obs_register_source: https://github.com/jp9000/obs-studio/blob/2c58185af3c85f4e594a4c067c9dfe5fa4b5b0a9/libobs/obs-source.h#L433-L443
+*(Author's note: the service API is incomplete as of this writing)*
+
+For example, to implement a service object, you need to define an
+:ref:`obs_service_info` structure and fill it out with information and
+callbacks related to your service:
+
+.. code:: cpp
+
+  /* my-service.c */
+
+  [...]
+
+  struct obs_service_info my_service_service = {
+          .id       = "my_service",
+          .get_name = my_service_name,
+          .create   = my_service_create,
+          .destroy  = my_service_destroy,
+          .encode   = my_service_encode,
+          .update   = my_service_update,
+          .get_url  = my_service_url,
+          .get_key  = my_service_key
+  };
+
+Then, in my-plugin.c, you would call :ref:`obs_register_service` in
+:ref:`obs_module_load` to register the service with libobs.
+
+.. code:: cpp
+
+  /* my-plugin.c */
+
+  [...]
+  
+  extern struct obs_service_info my_service; /* Defined in my-service.c */
+
+  bool obs_module_load(void)
+  {
+          obs_register_service(&my_service);
+
+          [...]
+
+          return true;
+  }
+
+The only two existing services objects are the "common RTMP services"
+and "custom RTMP service" objects in `plugins/rtmp-services
+<https://github.com/jp9000/obs-studio/tree/master/plugins/rtmp-services>`_
+
+Settings
+--------
+Settings (see `libobs/obs-data.h`_) are used to get or set settings data
+typically associated with libobs objects, and can then be saved and
+loaded via Json text.
+
+The *obs_data_t* is the equivalent of a Json object, where it's a string
+table of sub-objects, and the *obs_data_array_t* is similarly used to
+store an array of *obs_data_t* objects, similar to Json arrays (though
+not quite identical).
+
+To create an *obs_data_t* or *obs_data_array_t* object, you'd call the
+:ref:`obs_data_create` or :ref:`obs_data_array_create` functions.
+*obs_data_t* and *obs_data_array_t* objects are reference counted, so
+when you are finished with the object, call :ref:`obs_data_release` or
+:ref:`obs_data_array_release` to release those references.  Any time an
+*obs_data_t* or *obs_data_array_t* object is returned by a function,
+their references are incremented, so you must release those references
+each time.
+
+To set values for an *obs_data_t* object, you'd use one of the following
+functions:
+
+.. code:: cpp
+
+  /* Set functions */
+  EXPORT void obs_data_set_string(obs_data_t *data, const char *name, const char *val);
+  EXPORT void obs_data_set_int(obs_data_t *data, const char *name, long long val);
+  EXPORT void obs_data_set_double(obs_data_t *data, const char *name, double val);
+  EXPORT void obs_data_set_bool(obs_data_t *data, const char *name, bool val);
+  EXPORT void obs_data_set_obj(obs_data_t *data, const char *name, obs_data_t *obj);
+  EXPORT void obs_data_set_array(obs_data_t *data, const char *name, obs_data_array_t *array);
+
+Similarly, to get a value from an *obs_data_t* object, you'd use one of
+the following functions:
+
+.. code:: cpp
+
+  /* Get functions */
+  EXPORT const char *obs_data_get_string(obs_data_t *data, const char *name);
+  EXPORT long long obs_data_get_int(obs_data_t *data, const char *name);
+  EXPORT double obs_data_get_double(obs_data_t *data, const char *name);
+  EXPORT bool obs_data_get_bool(obs_data_t *data, const char *name);
+  EXPORT obs_data_t *obs_data_get_obj(obs_data_t *data, const char *name);
+  EXPORT obs_data_array_t *obs_data_get_array(obs_data_t *data, const char *name);
+
+Unlike typical Json data objects, the *obs_data_t* object can also set
+default values.  This allows the ability to control what is returned if
+there is no value assigned to a specific string in an *obs_data_t*
+object when that data is loaded from a Json string or Json file.  Each
+libobs object also has a *get_defaults* callback which allows setting
+the default settings for the object on creation.
+
+These functions control the default values are as follows:
+
+.. code:: cpp
+
+  /* Default value functions. */
+  EXPORT void obs_data_set_default_string(obs_data_t *data, const char *name, const char *val);
+  EXPORT void obs_data_set_default_int(obs_data_t *data, const char *name, long long val);
+  EXPORT void obs_data_set_default_double(obs_data_t *data, const char *name, double val);
+  EXPORT void obs_data_set_default_bool(obs_data_t *data, const char *name, bool val);
+  EXPORT void obs_data_set_default_obj(obs_data_t *data, const char *name, obs_data_t *obj);
+
+Properties
+----------
+Properties (see `libobs/obs-properties.h`_) are used to automatically
+generate user interface to modify settings for a libobs object (if
+desired).  Each libobs object has a *get_properties* callback which is
+used to generate properties.  The properties API defines specific
+properties that are linked to the object's settings, and the front-end
+uses those properties to generate widgets in order to allow the user to
+modify the settings.  For example, if you had a boolean setting, you
+would use :ref:`obs_properties_add_bool` to allow the user to be able to
+change that setting.
+
+An example of this:
+
+.. code:: cpp
+
+   static obs_properties_t *my_source_properties(void *data)
+   {
+           obs_properties_t *ppts = obs_properties_create();
+           obs_properties_add_bool(ppts, "my_bool",
+                           obs_module_text("MyBool"));
+           UNUSED_PARAMETER(data);
+           return ppts;
+   }
+
+   [...]
+
+   struct obs_source_info my_source {
+           .get_properties = my_source_properties,
+           [...]
+   };
+
+The *data* parameter is the object's data if the object is present.
+Typically this is unused and probably shouldn't be used if possible.  It
+can be null if the properties are retrieved without an object associated
+with it.
+
+Properties can also be modified depending on what settings are shown.
+For example, you can mark certain properties as disabled or invisible
+depending on what a particular setting is set to using the
+:ref:`obs_property_set_modified_callback` function.
+
+For example, if you wanted boolean property A to hide text property B:
+
+.. code:: cpp
+
+   static bool setting_a_modified(obs_properties_t *ppts,
+                   obs_property_t *p, obs_data_t *settings)
+   {
+           bool enabled = obs_data_get_bool(settings, "setting_a");
+           p = obs_properties_get(ppts, "setting_b");
+           obs_property_set_enabled(p, enabled);
+
+           /* return true to update property widgets, false
+              otherwise */
+           return true;
+   }
+
+   [...]
+
+   static obs_properties_t *my_source_properties(void *data)
+   {
+           obs_properties_t *ppts = obs_properties_create();
+           obs_property_t *p;
+
+           p = obs_properties_add_bool(ppts, "setting_a",
+                           obs_module_text("SettingA"));
+           obs_property_set_modified_callback(p, setting_a_modified);
+
+           obs_properties_add_text(ppts, "setting_b",
+                           obs_module_text("SettingB"),
+                           OBS_TEXT_DEFAULT);
+           return ppts;
+   }
+
+Localization
+------------
+Typically, most plugins bundled with OBS Studio will use a simple
+ini-file localization method, where each file is a different language.
+When using this method, the :ref:`OBS_MODULE_USE_DEFAULT_LOCALE` macro
+is used which will automatically load/destroy the locale data with no
+extra effort on part of the plugin.  Then the :ref:`obs_module_text`
+function (which is automatically declared as an extern by
+`libobs/obs-module.h`_) is used when text lookup is needed.
+
+There are two exports the module used to load/destroy locale: the
+:ref:`obs_module_set_locale` export, and the
+:ref:`obs_module_free_locale` export.  The :ref:`obs_module_set_locale`
+export is called by libobs to set the current language, and then the
+:ref:`obs_module_free_locale` export is called by libobs on destruction
+of the module.  If you wish to implement a custom locale implementation
+for your plugin, you'd want to define these exports along with the
+:ref:`obs_module_text` extern yourself instead of relying on the
+:ref:`OBS_MODULE_USE_DEFAULT_LOCALE` macro.
+
+.. ---------------------------------------------------------------------------
+
 .. _libobs/obs-module.h: https://github.com/jp9000/obs-studio/blob/master/libobs/obs-module.h
 .. _libobs/obs.h: https://github.com/jp9000/obs-studio/blob/master/libobs/obs.h
 .. _libobs/obs-source.h: https://github.com/jp9000/obs-studio/blob/master/libobs/obs-source.h
 .. _libobs/obs-output.h: https://github.com/jp9000/obs-studio/blob/master/libobs/obs-output.h
 .. _libobs/obs-encoder.h: https://github.com/jp9000/obs-studio/blob/master/libobs/obs-encoder.h
 .. _libobs/obs-service.h: https://github.com/jp9000/obs-studio/blob/master/libobs/obs-service.h
+.. _libobs/obs-data.h: https://github.com/jp9000/obs-studio/blob/master/libobs/obs-data.h
+.. _libobs/obs-properties.h: https://github.com/jp9000/obs-studio/blob/master/libobs/obs-properties.h
 .. _libobs/graphics/graphics.h: https://github.com/jp9000/obs-studio/blob/master/libobs/graphics/graphics.h
-.. _OBS_DECLARE_MODULE(): https://github.com/jp9000/obs-studio/blob/2c58185af3c85f4e594a4c067c9dfe5fa4b5b0a9/libobs/obs-module.h#L75-L85
-.. _obs_module_load: https://github.com/jp9000/obs-studio/blob/2c58185af3c85f4e594a4c067c9dfe5fa4b5b0a9/libobs/obs-module.h#L87-L95
