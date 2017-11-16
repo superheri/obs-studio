@@ -51,15 +51,14 @@ There are three primary threads spawned by libobs on initialization:
 obs_video_thread; it was renamed as of ths writing to prevent confusion
 with video_thread)*
 
+.. _output_channels:
+
 Output Channels
 ---------------
 Rendering video or audio starts from output channels.  You assign a
-source to an output channel via this function::
-
-  void obs_set_output_source(uint32_t channel, obs_source_t *source);
-
-*channel* can be any number from 0..(MAX_CHANNELS_-1).
-You may initially think that this is how you display multiple sources at
+source to an output channel via the :c:func:`obs_set_output_source()`
+function.  *channel* can be any number from 0..(MAX_CHANNELS_-1).  You
+may initially think that this is how you display multiple sources at
 once; however, sources are hierarchical.  Sources such as scenes or
 transitions can have multiple sub-sources, and those sub-sources in turn
 can have sub-sources and so on.  Typically, you would use scenes to draw
@@ -94,7 +93,7 @@ then sent along with its timestamp to the current video handler,
 
 It then puts that raw frame in a queue of MAX_CACHE_SIZE_ in the `video
 output handler`_.  A semaphore is posted, then the video-io thread will
-process frames as it's able.  If the video frame cache is full, it will
+process frames as it's able.  If the video frame queue is full, it will
 duplicate the last frame in the queue in an attempt to reduce video
 encoding complexity (and thus CPU usage) `[2]`_.  This is why you may
 see frame skipping when the encoder can't keep up.  Frames are sent to
@@ -142,7 +141,8 @@ mix/process their children's audio themselves via the
 transitions to fade in the audio of one source and fade in the audio of
 a new source when they're transitioning between two sources.  The mix or
 processed audio data is then stored in `obs_source::audio_output_buf`_
-of that node similarly.
+of that node similarly, and the process is repeated until the audio
+reaches the root nodes of the tree.
 
 Finally, when the audio has reached the base of the snapshot tree, the
 audio of all the sources in each output channel are mixed together for a

@@ -83,10 +83,11 @@ these files::
 Native Plugin Initialization
 ----------------------------
 To create a native plugin module, you will need to include the
-`libobs/obs-module.h`_ header, use :ref:`OBS_DECLARE_MODULE` macro, then
-create a definition of the function :ref:`obs_module_load`.  In your
-:ref:`obs_module_load` function, you then register any of your custom
-sources, outputs, encoders, or services.
+`libobs/obs-module.h`_ header, use :c:func:`OBS_DECLARE_MODULE()` macro,
+then create a definition of the function :c:func:`obs_module_load()`.
+In your :c:func:`obs_module_load()` function, you then register any of
+your custom sources, outputs, encoders, or services.  See the
+:doc:`reference-modules` for more information.
 
 The following is an example of my-plugin.c, which would register one
 object of each type:
@@ -123,11 +124,12 @@ Sources
 Sources are used to render video and/or audio on stream.  Things such as
 capturing displays/games/audio, playing a video, showing an image, or
 playing audio.  Sources can also be used to implement audio and video
-filters.  The `libobs/obs-source.h`_ file is the dedicated header for
-implementing sources.
+filters as well as transitions.  The `libobs/obs-source.h`_ file is the
+dedicated header for implementing sources.  See the
+:doc:`reference-sources` for more information.
 
 For example, to implement a source object, you need to define an
-:ref:`obs_source_info` structure and fill it out with information and
+:c:type:`obs_source_info` structure and fill it out with information and
 callbacks related to your source:
 
 .. code:: cpp
@@ -149,8 +151,8 @@ callbacks related to your source:
           .get_height   = my_source_height
   };
 
-Then, in my-plugin.c, you would call :ref:`obs_register_source` in
-:ref:`obs_module_load` to register the source with libobs.
+Then, in my-plugin.c, you would call :c:func:`obs_register_source()` in
+:c:func:`obs_module_load()` to register the source with libobs.
 
 .. code:: cpp
 
@@ -185,10 +187,11 @@ Outputs allow the ability to output the currently rendering audio/video.
 Streaming and recording are two common examples of outputs, but not the
 only types of outputs.  Outputs can receive the raw data or receive
 encoded data.  The `libobs/obs-output.h`_ file is the dedicated header
-for implementing outputs.
+for implementing outputs.  See the :doc:`reference-outputs` for more
+information.
 
 For example, to implement an output object, you need to define an
-:ref:`obs_output_info` structure and fill it out with information and
+:c:type:`obs_output_info` structure and fill it out with information and
 callbacks related to your output:
 
 .. code:: cpp
@@ -211,8 +214,8 @@ callbacks related to your output:
           .encoded_audio_codecs = "aac"
   };
 
-Then, in my-plugin.c, you would call :ref:`obs_register_output` in
-:ref:`obs_module_load` to register the output with libobs.
+Then, in my-plugin.c, you would call :c:func:`obs_register_output()` in
+:c:func:`obs_module_load()` to register the output with libobs.
 
 .. code:: cpp
 
@@ -250,11 +253,12 @@ Encoders
 Encoders are OBS-specific implementations of video/audio encoders, which
 are used with outputs that use encoders.  x264, NVENC, Quicksync are
 examples of encoder implementations.  The `libobs/obs-encoder.h`_ file
-is the dedicated header for implementing encoders.
+is the dedicated header for implementing encoders.  See the
+:doc:`reference-encoders` for more information.
 
 For example, to implement an encoder object, you need to define an
-:ref:`obs_encoder_info` structure and fill it out with information and
-callbacks related to your encoder:
+:c:type:`obs_encoder_info` structure and fill it out with information
+and callbacks related to your encoder:
 
 .. code:: cpp
 
@@ -276,8 +280,8 @@ callbacks related to your encoder:
           .get_video_info = my_encoder_video_info
   };
 
-Then, in my-plugin.c, you would call :ref:`obs_register_encoder` in
-:ref:`obs_module_load` to register the encoder with libobs.
+Then, in my-plugin.c, you would call :c:func:`obs_register_encoder()`
+in :c:func:`obs_module_load()` to register the encoder with libobs.
 
 .. code:: cpp
 
@@ -317,13 +321,14 @@ used with outputs that stream.  For example, you could have a custom
 implementation for streaming to Twitch, and another for YouTube to allow
 the ability to log in and use their APIs to do things such as get the
 RTMP servers or control the channel.  The `libobs/obs-service.h`_ file
-is the dedicated header for implementing services.
+is the dedicated header for implementing services.  See the
+:doc:`reference-services` for more information.
 
 *(Author's note: the service API is incomplete as of this writing)*
 
 For example, to implement a service object, you need to define an
-:ref:`obs_service_info` structure and fill it out with information and
-callbacks related to your service:
+:c:type:`obs_service_info` structure and fill it out with information
+and callbacks related to your service:
 
 .. code:: cpp
 
@@ -342,8 +347,8 @@ callbacks related to your service:
           .get_key  = my_service_key
   };
 
-Then, in my-plugin.c, you would call :ref:`obs_register_service` in
-:ref:`obs_module_load` to register the service with libobs.
+Then, in my-plugin.c, you would call :c:func:`obs_register_service()` in
+:c:func:`obs_module_load()` to register the service with libobs.
 
 .. code:: cpp
 
@@ -370,7 +375,8 @@ Settings
 --------
 Settings (see `libobs/obs-data.h`_) are used to get or set settings data
 typically associated with libobs objects, and can then be saved and
-loaded via Json text.
+loaded via Json text.  See the :doc:`reference-settings` for more
+information.
 
 The *obs_data_t* is the equivalent of a Json object, where it's a string
 table of sub-objects, and the *obs_data_array_t* is similarly used to
@@ -378,13 +384,13 @@ store an array of *obs_data_t* objects, similar to Json arrays (though
 not quite identical).
 
 To create an *obs_data_t* or *obs_data_array_t* object, you'd call the
-:ref:`obs_data_create` or :ref:`obs_data_array_create` functions.
-*obs_data_t* and *obs_data_array_t* objects are reference counted, so
-when you are finished with the object, call :ref:`obs_data_release` or
-:ref:`obs_data_array_release` to release those references.  Any time an
-*obs_data_t* or *obs_data_array_t* object is returned by a function,
-their references are incremented, so you must release those references
-each time.
+:c:func:`obs_data_create()` or :c:func:`obs_data_array_create()`
+functions.  *obs_data_t* and *obs_data_array_t* objects are reference
+counted, so when you are finished with the object, call
+:c:func:`obs_data_release()` or :c:func:`obs_data_array_release()` to
+release those references.  Any time an *obs_data_t* or
+*obs_data_array_t* object is returned by a function, their references
+are incremented, so you must release those references each time.
 
 To set values for an *obs_data_t* object, you'd use one of the following
 functions:
@@ -439,8 +445,9 @@ used to generate properties.  The properties API defines specific
 properties that are linked to the object's settings, and the front-end
 uses those properties to generate widgets in order to allow the user to
 modify the settings.  For example, if you had a boolean setting, you
-would use :ref:`obs_properties_add_bool` to allow the user to be able to
-change that setting.
+would use :c:func:`obs_properties_add_bool()` to allow the user to be
+able to change that setting.  See the :doc:`reference-properties` for
+more information.
 
 An example of this:
 
@@ -470,7 +477,7 @@ with it.
 Properties can also be modified depending on what settings are shown.
 For example, you can mark certain properties as disabled or invisible
 depending on what a particular setting is set to using the
-:ref:`obs_property_set_modified_callback` function.
+:c:func:`obs_property_set_modified_callback()` function.
 
 For example, if you wanted boolean property A to hide text property B:
 
@@ -509,21 +516,22 @@ Localization
 ------------
 Typically, most plugins bundled with OBS Studio will use a simple
 ini-file localization method, where each file is a different language.
-When using this method, the :ref:`OBS_MODULE_USE_DEFAULT_LOCALE` macro
-is used which will automatically load/destroy the locale data with no
-extra effort on part of the plugin.  Then the :ref:`obs_module_text`
-function (which is automatically declared as an extern by
-`libobs/obs-module.h`_) is used when text lookup is needed.
+When using this method, the :c:func:`OBS_MODULE_USE_DEFAULT_LOCALE()`
+macro is used which will automatically load/destroy the locale data with
+no extra effort on part of the plugin.  Then the
+:c:func:`obs_module_text()` function (which is automatically declared as
+an extern by `libobs/obs-module.h`_) is used when text lookup is needed.
 
 There are two exports the module used to load/destroy locale: the
-:ref:`obs_module_set_locale` export, and the
-:ref:`obs_module_free_locale` export.  The :ref:`obs_module_set_locale`
-export is called by libobs to set the current language, and then the
-:ref:`obs_module_free_locale` export is called by libobs on destruction
-of the module.  If you wish to implement a custom locale implementation
-for your plugin, you'd want to define these exports along with the
-:ref:`obs_module_text` extern yourself instead of relying on the
-:ref:`OBS_MODULE_USE_DEFAULT_LOCALE` macro.
+:c:func:`obs_module_set_locale()` export, and the
+:c:func:`obs_module_free_locale()` export.  The
+:c:func:`obs_module_set_locale()` export is called by libobs to set the
+current language, and then the :c:func:`obs_module_free_locale()` export
+is called by libobs on destruction of the module.  If you wish to
+implement a custom locale implementation for your plugin, you'd want to
+define these exports along with the :c:func:`obs_module_text()` extern
+yourself instead of relying on the
+:c:func:`OBS_MODULE_USE_DEFAULT_LOCALE()` macro.
 
 .. ---------------------------------------------------------------------------
 

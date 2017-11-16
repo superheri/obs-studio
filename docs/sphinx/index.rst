@@ -9,7 +9,15 @@ Welcome to OBS Studio's documentation!
 ======================================
 
 .. toctree::
-   :maxdepth: 2
+   :maxdepth: 3
 
    backend-design
    plugins
+   frontends
+   reference-core
+   reference-modules
+   reference-core-objects
+   reference-libobs-util
+   reference-libobs-callback
+   reference-libobs-graphics
+   reference-libobs-media-io
