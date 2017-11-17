@@ -62,7 +62,7 @@ Profiler Control Functions
 
 
 Profiling Functions
-------------------
+-------------------
 
 .. function:: void profile_register_root(const char *name, uint64_t expected_time_between_calls)
 

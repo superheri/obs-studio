@@ -1161,9 +1161,20 @@ Z-Stencil Functions
 
 .. function:: gs_zstencil_t *gs_zstencil_create(uint32_t width, uint32_t height, enum gs_zstencil_format format)
 
+   Creates a Z-stencil surface object.
+
+   :param width:  Width
+   :param height: Height
+   :param format: Format
+   :return:       New Z-stencil surface object, or *NULL* if failed
+
 ---------------------
 
 .. function:: void     gs_zstencil_destroy(gs_zstencil_t *zstencil)
+
+   Destroys a Z-stencil buffer.
+
+   :param zstencil: Z-stencil surface object
 
 ---------------------
 
@@ -1173,9 +1184,18 @@ Sampler State Functions
 
 .. function:: gs_samplerstate_t *gs_samplerstate_create(const struct gs_sampler_info *info)
 
+   Creates a sampler state object.
+
+   :param info: Sampler state information
+   :return:     New sampler state object
+
 ---------------------
 
 .. function:: void     gs_samplerstate_destroy(gs_samplerstate_t *samplerstate)
+
+   Destroys a sampler state object.
+
+   :param samplerstate: Sampler state object
 
 ---------------------
 
@@ -1185,17 +1205,54 @@ Vertex Buffer Functions
 
 .. function:: gs_vertbuffer_t *gs_vertexbuffer_create(struct gs_vb_data *data, uint32_t flags)
 
+   Creates a vertex buffer.
+
+   :param data:  Vertex buffer data to create vertex buffer with.
+                 Buffers in this structure should be allocated with
+                 :c:func:`bmalloc()`, :c:func:`bzalloc()`, or
+                 :c:func:`brealloc()`.  Their ownership is passed to the
+                 function, and they should not be destroyed by the
+                 caller once passed
+
+   :param flags: Creation flags.  Can be 0 or a bitwise-OR combination
+                 of any of the following values:
+
+                 - GS_DYNAMIC - Can be dynamically updated in real time.
+
+   :return:      A new vertex buffer object, or *NULL* if failed
+
 ---------------------
 
 .. function:: void     gs_vertexbuffer_destroy(gs_vertbuffer_t *vertbuffer)
+
+   Destroys a vertex buffer object.
+
+   :param vertbuffer: Vertex buffer object
 
 ---------------------
 
 .. function:: void     gs_vertexbuffer_flush(gs_vertbuffer_t *vertbuffer)
 
+   Flushes a vertex buffer to its interval vertex data object.  To
+   modify its internal vertex data, call
+   :c:func:`gs_vertexbuffer_get_data()`.
+
+   Can only be used with dynamic vertex buffer objects.
+
+   :param vertbuffer: Vertex buffer object
+
 ---------------------
 
 .. function:: struct gs_vb_data *gs_vertexbuffer_get_data(const gs_vertbuffer_t *vertbuffer)
+
+   Gets the vertex buffer data associated with a vertex buffer object.
+   This data can be changed and vertex buffer can be updated with
+   :c:func:`gs_vertexbuffer_flush()`.
+
+   Can only be used with dynamic vertex buffer objects.
+
+   :param vertbuffer: Vertex buffer object
+   :return:           Vertex buffer data structure
 
 ---------------------
 
@@ -1205,25 +1262,71 @@ Index Buffer Functions
 
 .. function:: gs_indexbuffer_t *gs_indexbuffer_create(enum gs_index_type type, void *indices, size_t num, uint32_t flags)
 
+   Creates an index buffer.
+
+   :param type:    Index buffer type
+   :param indices: Index buffer data.  This buffer must be allocated
+                   with :c:func:`bmalloc()`, :c:func:`bzalloc()`, or
+                   :c:func:`bralloc()`, and ownership of this buffer is
+                   passed to the index buffer object.
+   :param num:     Number of indices in the buffer
+
+   :param flags:   Creation flags.  Can be 0 or a bitwise-OR combination
+                   of any of the following values:
+
+                   - GS_DYNAMIC - Can be dynamically updated in real time.
+
+   :return:        A new index buffer object, or *NULL* if failed
+
 ---------------------
 
 .. function:: void     gs_indexbuffer_destroy(gs_indexbuffer_t *indexbuffer)
+
+   Destroys an index buffer object.
+
+   :param indexbuffer: Index buffer object
 
 ---------------------
 
 .. function:: void     gs_indexbuffer_flush(gs_indexbuffer_t *indexbuffer)
 
+   Flushes a index buffer to its interval index data object.  To modify
+   its internal index data, call :c:func:`gs_indexbuffer_get_data()`.
+
+   Can only be used with dynamic index buffer objects.
+
+   :param indexbuffer: Index buffer object
+
 ---------------------
 
 .. function:: void     *gs_indexbuffer_get_data(const gs_indexbuffer_t *indexbuffer)
+
+   Gets the index buffer data associated with a index buffer object.
+   This data can be changed and index buffer can be updated with
+   :c:func:`gs_indexbuffer_flush()`.
+
+   Can only be used with dynamic index buffer objects.
+
+   :param vertbuffer: Index buffer object
+   :return:           Index buffer data pointer
 
 ---------------------
 
 .. function:: size_t   gs_indexbuffer_get_num_indices(const gs_indexbuffer_t *indexbuffer)
 
+   Gets the number of indices associated with this index buffer.
+
+   :param indexbuffer: Index buffer object
+   :return:            Number of indices the vertex buffer object has
+
 ---------------------
 
 .. function:: enum gs_index_type gs_indexbuffer_get_type(const gs_indexbuffer_t *indexbuffer)
+
+   Gets the type of index buffer.
+
+   :param indexbuffer: Index buffer object
+   :return:            Index buffer type
 
 ---------------------
 
@@ -1322,8 +1425,5 @@ Graphics Types
 .. type:: typedef struct gs_texture_render   gs_texrender_t
 .. type:: typedef struct gs_shader           gs_shader_t
 .. type:: typedef struct gs_shader_param     gs_sparam_t
-.. type:: typedef struct gs_effect           gs_effect_t
-.. type:: typedef struct gs_effect_technique gs_technique_t
-.. type:: typedef struct gs_effect_param     gs_eparam_t
 .. type:: typedef struct gs_device           gs_device_t
 .. type:: typedef struct graphics_subsystem  graphics_t

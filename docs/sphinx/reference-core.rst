@@ -153,6 +153,9 @@ Initialization, Shutdown, and Information
    
    :return: *false* if no audio
 
+---------------------
+
+
 Libobs Objects
 --------------
 
@@ -309,6 +312,9 @@ Libobs Objects
 
    typedef bool (*obs_save_source_filter_cb)(void *data, obs_source_t *source);
 
+---------------------
+
+
 Video, Audio, and Graphics
 --------------------------
 
@@ -421,6 +427,9 @@ Primary signal/procedure handlers
 
    :return: The primary obs procedure handler
 
+---------------------
+
+
 .. _core_signal_handler_reference:
 
 Core OBS Signals
@@ -510,6 +519,9 @@ Core OBS Signals
 **hotkey_bindings_changed** (ptr hotkey)
 
    Called when a hotkey's bindings has changed.
+
+---------------------
+
 
 .. _display_reference:
 

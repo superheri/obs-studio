@@ -8,6 +8,7 @@ plugin modules.
 
 Plugins can implement sources, outputs, encoders, and services.
 
+
 Plugin Module Headers
 ---------------------
 These are some notable headers commonly used by plugins:
@@ -37,6 +38,7 @@ These are some notable headers commonly used by plugins:
       libobs objects
 
     - `libobs/graphics/graphics.h`_ -- Used for graphics rendering
+
 
 Common Directory Structure and CMakeLists.txt
 ---------------------------------------------
@@ -80,6 +82,7 @@ these files::
 
   install_obs_plugin_with_data(my-plugin data)
 
+
 Native Plugin Initialization
 ----------------------------
 To create a native plugin module, you will need to include the
@@ -116,6 +119,7 @@ object of each type:
           obs_register_service(&my_service);
           return true;
   }
+
 
 .. _plugins_sources:
 
@@ -178,6 +182,7 @@ Some simple examples of sources:
 - Audio source: The `since wave test source <https://github.com/jp9000/obs-studio/blob/master/test/test-input/test-sinewave.c>`_
 - Video filter: The `test video filter <https://github.com/jp9000/obs-studio/blob/master/test/test-input/test-filter.c>`_
 - Audio filter: The `gain audio filter <https://github.com/jp9000/obs-studio/blob/master/plugins/obs-filters/gain-filter.c>`_
+
 
 .. _plugins_outputs:
 
@@ -246,6 +251,7 @@ Some examples of outputs:
 
   - The `FFmpeg output <https://github.com/jp9000/obs-studio/blob/master/plugins/obs-ffmpeg/obs-ffmpeg-output.c>`_
 
+
 .. _plugins_encoders:
 
 Encoders
@@ -312,6 +318,7 @@ Examples of encoders:
 
   - The `FFmpeg AAC/Opus encoder <https://github.com/jp9000/obs-studio/blob/master/plugins/obs-ffmpeg/obs-ffmpeg-audio-encoders.c>`_
 
+
 .. _plugins_services:
 
 Services
@@ -370,6 +377,7 @@ Then, in my-plugin.c, you would call :c:func:`obs_register_service()` in
 The only two existing services objects are the "common RTMP services"
 and "custom RTMP service" objects in `plugins/rtmp-services
 <https://github.com/jp9000/obs-studio/tree/master/plugins/rtmp-services>`_
+
 
 Settings
 --------
@@ -435,6 +443,7 @@ These functions control the default values are as follows:
   EXPORT void obs_data_set_default_double(obs_data_t *data, const char *name, double val);
   EXPORT void obs_data_set_default_bool(obs_data_t *data, const char *name, bool val);
   EXPORT void obs_data_set_default_obj(obs_data_t *data, const char *name, obs_data_t *obj);
+
 
 Properties
 ----------
@@ -512,6 +521,7 @@ For example, if you wanted boolean property A to hide text property B:
            return ppts;
    }
 
+
 Localization
 ------------
 Typically, most plugins bundled with OBS Studio will use a simple
@@ -532,6 +542,63 @@ implement a custom locale implementation for your plugin, you'd want to
 define these exports along with the :c:func:`obs_module_text()` extern
 yourself instead of relying on the
 :c:func:`OBS_MODULE_USE_DEFAULT_LOCALE()` macro.
+
+Rendering Graphics
+------------------
+
+Libobs has a custom-made programmable graphics subsystem that wraps both
+Direct3D 11 and OpenGL.  The reason why it was designed with a custom
+graphics subsystem was to accommodate custom capture features only
+available on specific operating systems.
+
+*(Author's note: In retrospect, I probably should have used something
+like ANGLE, but I would have to modify it to accommodate my specific
+use-cases.)*
+
+
+Effects
+^^^^^^^
+
+Effects are used by all video objects in libobs, and easily bundle
+related vertex/pixel shaders in to one file.
+
+An effect file has a nearly identical syntax to Direct3D 11 HLSL effect
+files.  The only differences are as follows:
+
+- Sampler states are named "sampler_state"
+- Position semantic is called "POSITION" rather than "SV_Position"
+
+*(Author's note: I'm probably missing a few exceptions here, if I am
+please let me know)*
+
+The recommended way to use effects is like so:
+
+.. code:: cpp
+
+   for (gs_effect_loop(effect, "technique")) {
+           [draw calls go here]
+   }
+
+This will automatically handle loading/unloading of the effect and its
+shaders for a given technique name.
+
+
+Rendering Video Sources
+^^^^^^^^^^^^^^^^^^^^^^^
+
+A synchronous video source renders in its
+:c:member:`obs_source_info.video_render` callback.
+
+Sources can render with custom drawing (via the OBS_SOURCE_CUSTOM_DRAW
+output capability flag), or without.  When sources render without custom
+rendering, it's recommended to render a single texture with
+:c:func:`obs_source_draw()`.  Otherwise the source is expected to
+perform rendering on its own and manage its own effects.
+
+Libobs comes with a set of default/standard effects that can be accessed
+via the :c:func:`obs_get_base_effect()` function.  You can use these
+effects to render, or you can create custom effects with
+:c:func:`gs_effect_create_from_file()` and render with a custom effect.
 
 .. ---------------------------------------------------------------------------
 

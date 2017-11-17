@@ -56,6 +56,14 @@ display, then you must assign a draw callback with
 :c:func:`obs_display_add_draw_callback()`.  If you need to remove a draw
 callback, call :c:func:`obs_display_remove_draw_callback()` similarly.
 
+When drawing, to draw the main preview window (if any), call
+:c:func:`obs_render_main_view()`.  If you need to render a specific
+source on a secondary display, you can increment its "showing" state
+with :c:func:`obs_source_inc_showing()` while it's showing in the
+secondary display, draw it with :c:func:`obs_source_video_render()` in
+the draw callback, then when it's no longer showing in the secondary
+display, call :c:func:`obs_source_dec_showing()`.
+
 If the display needs to be resized, call :c:func:`obs_display_resize()`.
 
 If the display needs a custom background color other than black, call
@@ -81,16 +89,8 @@ See :ref:`display_reference` for more information.
 Saving/Loading Objects and Object Management
 --------------------------------------------
 
-The frontend is generally expected to manage its own objects, for most
-objects, generally to save and load an object, you would get its
-settings (for example :c:func:`obs_output_get_settings()`).  Generally,
-you don't have to save each object to different files individually;
-you'd save multiple objects together in a bigger :c:type:`obs_data_t`
-object, then save that via :c:func:`obs_data_save_json_safe()`, then
-load everything again via
-:c:func:`obs_data_create_from_json_file_safe()`.
-
-However, for sources, there are some helper functions to allow easier
+The frontend is generally expected to manage its own objects, however
+for sources, there are some helper functions to allow easier
 saving/loading all sources: :c:func:`obs_save_sources()` and
 :c:func:`obs_load_sources()`.  With those functions, all sources that
 aren't private will automatically be saved and loaded.  You can also
@@ -102,12 +102,20 @@ downside is I had to add "private" sources that aren't savable via the
 :c:func:`obs_source_create_private()` function.  Just one of the many
 minor design flaws that can occur during long-term development.)*
 
+For outputs, encoders, and services, there are no helper functions, so
+usually you'd get their settings individually and save them as json.
+(See :c:func:`obs_output_get_settings()`).  You don't have to save each
+object to different files individually; you'd save multiple objects
+together in a bigger :c:type:`obs_data_t` object, then save that via
+:c:func:`obs_data_save_json_safe()`, then load everything again via
+:c:func:`obs_data_create_from_json_file_safe()`.
+
 
 Signals
 -------
 
-The core, as well as scenes sources, have a set of standard signals that
-are used to determine when something happens or changes.
+The core, as well as scenes and sources, have a set of standard signals
+that are used to determine when something happens or changes.
 
 Typically the most important signals are the
 :ref:`output_signal_handler_reference`:  the **start**, **stop**,
